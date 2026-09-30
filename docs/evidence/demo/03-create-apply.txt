@@ -1,0 +1,11 @@
+github_repository.demo: Creating...
+github_repository.demo: Creation complete after 9s [id=repository-demo]
+github_repository_ruleset.demo: Creating...
+github_repository_ruleset.demo: Creation complete after 1s [id=24239438]
+
+Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+demo_repository_url = "https://github.com/xbrain-org-poc/repository-demo"
+repository_url = "https://github.com/xbrain-org-poc/iac-repository-management-poc"

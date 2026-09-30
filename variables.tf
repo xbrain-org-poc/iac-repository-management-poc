@@ -4,6 +4,12 @@ variable "organization" {
   default     = "xbrain-org-poc"
 }
 
+variable "demo_repository_description" {
+  description = "Description of the repository used to demonstrate IaC management."
+  type        = string
+  default     = "PoC thành công: repository và ruleset được quản lý bằng Terraform."
+}
+
 variable "repository_name" {
   description = "Name of the repository managed by this PoC."
   type        = string

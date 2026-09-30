@@ -1,0 +1,9 @@
+github_repository.demo: Modifying... [id=repository-demo]
+github_repository.demo: Modifications complete after 2s [id=repository-demo]
+
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
+
+Outputs:
+
+demo_repository_url = "https://github.com/xbrain-org-poc/repository-demo"
+repository_url = "https://github.com/xbrain-org-poc/iac-repository-management-poc"

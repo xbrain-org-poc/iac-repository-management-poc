@@ -1,0 +1,29 @@
+github_repository.poc: Refreshing state... [id=iac-repository-management-poc]
+github_repository.demo: Refreshing state... [id=repository-demo]
+github_repository_ruleset.default_branch[0]: Refreshing state... [id=24238381]
+github_repository_ruleset.demo: Refreshing state... [id=24239438]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # github_repository.demo will be updated in-place
+  ~ resource "github_repository" "demo" {
+      ~ has_issues                              = false -> true
+        id                                      = "repository-demo"
+        name                                    = "repository-demo"
+        # (40 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: demo-drift.tfplan
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "demo-drift.tfplan"

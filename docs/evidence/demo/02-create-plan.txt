@@ -1,0 +1,100 @@
+github_repository.poc: Refreshing state... [id=iac-repository-management-poc]
+github_repository_ruleset.default_branch[0]: Refreshing state... [id=24238381]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # github_repository.demo will be created
+  + resource "github_repository" "demo" {
+      + allow_auto_merge                        = false
+      + allow_forking                           = (known after apply)
+      + allow_merge_commit                      = false
+      + allow_rebase_merge                      = false
+      + allow_squash_merge                      = true
+      + archived                                = false
+      + auto_init                               = true
+      + default_branch                          = (known after apply)
+      + delete_branch_on_merge                  = true
+      + description                             = "Repository demo được tạo và quản lý bằng Terraform."
+      + etag                                    = (known after apply)
+      + fork                                    = (known after apply)
+      + full_name                               = (known after apply)
+      + git_clone_url                           = (known after apply)
+      + has_issues                              = true
+      + has_projects                            = false
+      + has_wiki                                = false
+      + html_url                                = (known after apply)
+      + http_clone_url                          = (known after apply)
+      + id                                      = (known after apply)
+      + ignore_vulnerability_alerts_during_read = false
+      + merge_commit_message                    = "PR_TITLE"
+      + merge_commit_title                      = "MERGE_MESSAGE"
+      + name                                    = "repository-demo"
+      + node_id                                 = (known after apply)
+      + primary_language                        = (known after apply)
+      + private                                 = (known after apply)
+      + repo_id                                 = (known after apply)
+      + source_owner                            = (known after apply)
+      + source_repo                             = (known after apply)
+      + squash_merge_commit_message             = "COMMIT_MESSAGES"
+      + squash_merge_commit_title               = "COMMIT_OR_PR_TITLE"
+      + ssh_clone_url                           = (known after apply)
+      + svn_url                                 = (known after apply)
+      + topics                                  = (known after apply)
+      + visibility                              = "public"
+      + vulnerability_alerts                    = (known after apply)
+      + web_commit_signoff_required             = (known after apply)
+
+      + security_and_analysis (known after apply)
+    }
+
+  # github_repository_ruleset.demo will be created
+  + resource "github_repository_ruleset" "demo" {
+      + enforcement = "active"
+      + etag        = (known after apply)
+      + id          = (known after apply)
+      + name        = "protect-default-branch"
+      + node_id     = (known after apply)
+      + repository  = "repository-demo"
+      + ruleset_id  = (known after apply)
+      + target      = "branch"
+
+      + conditions {
+          + ref_name {
+              + exclude = []
+              + include = [
+                  + "~DEFAULT_BRANCH",
+                ]
+            }
+        }
+
+      + rules {
+          + update_allows_fetch_and_merge = false
+
+          + pull_request {
+              + allowed_merge_methods             = [
+                  + "squash",
+                ]
+              + dismiss_stale_reviews_on_push     = true
+              + require_code_owner_review         = false
+              + require_last_push_approval        = false
+              + required_approving_review_count   = 1
+              + required_review_thread_resolution = false
+            }
+        }
+    }
+
+Plan: 2 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + demo_repository_url = (known after apply)
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: demo-create.tfplan
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "demo-create.tfplan"
