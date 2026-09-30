@@ -1,43 +1,214 @@
-# GitHub repository management PoC
+# PoC quản lý GitHub Repository bằng Terraform
 
-This PoC uses Terraform to manage the private repository `iac-repository-management-poc` in the `xbrain-org-poc` GitHub organization. The organization is created manually; the repository is the IaC-managed resource.
+## Mục tiêu
 
-## Managed configuration
+Chứng minh Terraform có thể tạo repository trong GitHub Organization, quản lý thiết lập, cập nhật cấu hình và phát hiện thay đổi ngoài IaC (drift).
 
-- Repository metadata and visibility
-- Issue tracker enabled; Projects and Wiki disabled
-- Squash merge enabled; merge commits and rebase merge disabled
-- Delete source branches after merge
-- Optional default-branch ruleset requires one approving pull request review and dismisses stale approvals
+- Organization: [xbrain-org-poc](https://github.com/xbrain-org-poc), được tạo thủ công.
+- Repo PoC: [iac-repository-management-poc](https://github.com/xbrain-org-poc/iac-repository-management-poc), được tạo bằng Terraform.
+- Repo này vừa chứa mã IaC, vừa là resource Terraform quản lý.
 
-The default repository is private and the sample ruleset is disabled. GitHub Free supports repository rulesets on public repositories; private repositories require a paid plan for this feature. To enable the sample ruleset on GitHub Free, set `repository_visibility = "public"` and `enable_branch_ruleset = true` in a local `terraform.tfvars` file. Only make the repository public if its contents are safe to publish.
+PoC cốt lõi hoàn thành khi chứng minh được: **tạo repo → cập nhật bằng IaC → phát hiện và khôi phục drift → plan không còn thay đổi**. Một repository mẫu đủ cho phạm vi này.
 
-## Prerequisites
+## Phạm vi và phân công
 
-- Terraform 1.5 or later
-- GitHub CLI authenticated as an organization owner with repository administration access
+Task này quản lý repository và các thiết lập của nó. Tạo team, mời thành viên vào org và quản lý membership thuộc task của hai thành viên khác.
 
-The GitHub provider reads `GITHUB_TOKEN` from the environment. Do not put credentials in Terraform files or commit them.
+Nếu bổ sung quyền team trên repo, cần thống nhất một bên sở hữu resource gán quyền và dùng team đã có. Không khai báo lại team hoặc membership trong stack này.
 
-## Manage the existing PoC repository
+## Luồng hoạt động
 
-Terraform state is local and ignored by Git. A fresh clone therefore needs a one-time import before it can plan changes to this already existing repository. In PowerShell:
+```text
+Khai báo Terraform → plan → review → apply → GitHub API
+                                         ↓
+                        Kiểm tra GitHub → plan xác nhận trạng thái
+```
+
+Terraform provider gọi GitHub API để thực hiện thay đổi. State lưu liên kết giữa resource trong code và repository đã tồn tại.
+
+## Mã nguồn và cấu hình
+
+| File | Vai trò |
+| --- | --- |
+| `main.tf` | Provider, repository và ruleset tùy chọn |
+| `variables.tf` | Tên org/repo, mô tả, visibility và cờ bật ruleset |
+| `outputs.tf` | Xuất URL repository |
+| `.terraform.lock.hcl` | Khóa phiên bản provider đã chọn |
+| `.gitignore` | Loại state, plan, config local và thư mục provider khỏi Git |
+
+Cấu hình hiện tại:
+
+| Thuộc tính | Giá trị |
+| --- | --- |
+| Visibility | Private |
+| Issues | Bật |
+| Wiki / Projects | Tắt |
+| Squash merge | Bật |
+| Merge commit / Rebase merge | Tắt |
+| Xóa nhánh sau merge | Bật |
+| Ruleset nhánh mặc định | Có code, đang tắt |
+
+Ruleset tùy chọn yêu cầu PR, một approving review, hủy approval cũ khi có commit mới và chỉ cho squash merge.
+
+## Điều kiện chạy
+
+- Terraform từ phiên bản 1.5 trở lên.
+- GitHub CLI (`gh`) đã đăng nhập tài khoản có quyền tạo/quản lý repo trong org.
+- Chạy các lệnh PowerShell bên dưới tại thư mục chứa `main.tf`.
 
 ```powershell
+gh auth status
 $env:GITHUB_TOKEN = gh auth token
 terraform init
 terraform fmt -check
 terraform validate
+```
+
+Token được truyền qua môi trường của phiên terminal. Không ghi token vào code, tfvars hoặc log. Không commit state/plan. Nếu vừa cài Terraform và terminal chưa nhận lệnh, mở terminal mới để cập nhật PATH.
+
+## Tiếp quản repository đã có
+
+State hiện lưu local và không nằm trong Git. Người clone mới cần import repo trước khi quản lý repo đã tồn tại.
+
+```powershell
+terraform state list
+```
+
+Nếu state chưa chứa `github_repository.poc`, import một lần:
+
+```powershell
 terraform import github_repository.poc iac-repository-management-poc
 terraform plan
 ```
 
-Only run `terraform import` when the current local state does not already contain `github_repository.poc`. Import records the existing GitHub repository in local state; it does not change the repository.
+Import ghi nhận repo đã có vào state, không tạo lại repo. Không import lại nếu resource đã có trong state. PoC hiện dùng một người chạy apply; không để nhiều state local độc lập cùng quản lý repo này.
 
-Review every plan before applying. After making an intentional configuration change, run `terraform plan`, then `terraform apply`, and run `terraform plan` again to confirm there are no remaining changes. Never commit Terraform state or plan files. The credential is read from the current terminal environment and is not stored in this repository.
+Để demo tạo repo mới, dùng working copy có state mới và đặt `repository_name` trong `terraform.tfvars` thành tên chưa tồn tại trong org. Không đổi tên trên state hiện tại chỉ để tạo repo khác, vì Terraform có thể đổi tên repo đang quản lý.
 
-To demonstrate repository creation instead, use a fresh working copy and set `repository_name` in a local, ignored `terraform.tfvars` file to a unique name that does not already exist in the organization. Review the plan before applying.
+## Kịch bản chứng minh PoC
 
-## Scope and follow-up
+### 1. Tạo repository bằng Terraform
 
-This PoC manages one private repository and can optionally manage a default-branch ruleset where the GitHub plan supports it. Team/member lifecycle is a separate workstream. For shared use, configure a protected remote Terraform backend before multiple people run applies; do not let multiple local states manage the same resource.
+Với tên repo chưa tồn tại và state mới:
+
+```powershell
+terraform plan -out=creation.tfplan
+terraform apply creation.tfplan
+```
+
+Mong đợi: plan đề xuất tạo `github_repository.poc`; apply thành công; repo xuất hiện trong đúng org với cấu hình đã khai báo.
+
+Repo PoC hiện tại đã được tạo bằng luồng này. Không cần xóa repo để tái hiện demo tạo mới.
+
+### 2. Cập nhật cấu hình bằng IaC
+
+Sửa giá trị mặc định của `repository_description` trong `variables.tf` thành mô tả demo, rồi chạy:
+
+```powershell
+terraform plan -out=update.tfplan
+terraform apply update.tfplan
+terraform plan
+```
+
+Mong đợi: plan chỉ ra thay đổi mô tả; GitHub hiển thị mô tả mới; plan cuối báo `No changes`. Nếu dùng giá trị demo tạm thời, khôi phục code rồi review plan/apply để đưa repo về baseline.
+
+### 3. Phát hiện và khôi phục drift
+
+1. Giữ `has_issues = true` trong Terraform.
+2. Trên Settings của repo PoC, tắt Issues bằng GitHub UI.
+3. Chạy `terraform plan -out=drift.tfplan`.
+4. Xác nhận plan đề xuất đổi `has_issues` từ `false` về `true`.
+5. Chạy `terraform apply drift.tfplan`.
+6. Kiểm tra Issues bật lại và `terraform plan` báo `No changes`.
+
+Plan phát hiện drift trong các thuộc tính Terraform quản lý. Plan không tự khôi phục drift; cần apply sau review.
+
+### 4. Ruleset trên repo public — tùy chọn
+
+Repo hiện vẫn private. Chưa chuyển public hoặc apply ruleset.
+
+Nếu chọn demo ruleset trên GitHub Free, rà nội dung và lịch sử commit trước khi công khai, rồi đặt trong `terraform.tfvars`:
+
+```hcl
+repository_visibility = "public"
+enable_branch_ruleset = true
+```
+
+Review plan, apply và kiểm tra ruleset `protect-default-branch` active trên nhánh mặc định. Demo yêu cầu PR và một approving review với reviewer khác tác giả PR. Ruleset được tạo thành công chưa đủ chứng minh hành vi thực thi.
+
+## Bằng chứng và trạng thái hiện tại
+
+Ngày ghi nhận: **30/09/2026**. Bảng dưới ghi kết quả đã quan sát trong phiên triển khai; các kịch bản chưa chạy được ghi rõ.
+
+| Hạng mục | Kết quả đã quan sát | Trạng thái |
+| --- | --- | --- |
+| Cấu hình hợp lệ | `terraform validate` thành công | Đã chạy |
+| Tạo repo | Apply báo `1 added, 0 changed, 0 destroyed` | Đã chạy |
+| Thiết lập repo | GitHub API trả về các giá trị đúng bảng cấu hình | Đã kiểm tra |
+| Trạng thái sau apply | Plan báo `No changes` trong phiên tạo repo | Đã chạy |
+| Cập nhật bằng IaC | Chưa ghi nhận kết quả demo | Chưa demo |
+| Phát hiện/khôi phục drift | Chưa ghi nhận kết quả demo | Chưa demo |
+| Ruleset | Có code, đang tắt | Chưa apply/demo |
+
+Lệnh đọc cấu hình thực tế:
+
+```powershell
+gh api repos/xbrain-org-poc/iac-repository-management-poc --jq '{visibility,description,has_issues,has_wiki,has_projects,allow_squash_merge,allow_merge_commit,allow_rebase_merge,delete_branch_on_merge}'
+```
+
+Khi bàn giao, lưu log đã loại thông tin nhạy cảm hoặc ảnh chụp vào `docs/evidence/`: plan trước thay đổi, apply, kết quả trên GitHub và plan cuối. Hiện chưa có bộ bằng chứng lưu trong repo cho toàn bộ kịch bản; không coi bảng trạng thái này là thay thế cho bộ bằng chứng đó.
+
+## Checklist hoàn thành task
+
+### Bắt buộc cho PoC repository
+
+- [x] Có mã Terraform quản lý repository trong đúng org.
+- [x] Tạo repository thành công bằng Terraform.
+- [x] Kiểm tra thiết lập GitHub khớp với cấu hình khai báo.
+- [x] Có kết quả plan sau apply báo `No changes`.
+- [x] Có hướng dẫn xác thực, khởi tạo và import repo đã có.
+- [x] Ghi rõ phạm vi, phân công và giới hạn GitHub Free.
+- [ ] Demo cập nhật một thuộc tính bằng IaC và xác nhận trên GitHub.
+- [ ] Demo phát hiện và khôi phục drift; plan cuối không còn thay đổi.
+- [ ] Lưu bằng chứng tạo/cập nhật/drift đã loại thông tin nhạy cảm.
+- [ ] Chuẩn bị demo 5 phút và báo cáo kết quả cho mentor.
+
+### Bổ sung nếu chọn demo bảo vệ nhánh
+
+- [ ] Chốt dùng repo public phù hợp với dữ liệu demo.
+- [ ] Apply ruleset trên nhánh mặc định.
+- [ ] Chứng minh yêu cầu PR/review hoạt động thực tế.
+- [ ] Lưu bằng chứng và cập nhật trạng thái trong README.
+
+Chỉ đánh dấu khi đã chạy và có kết quả. PoC cốt lõi không bắt buộc catalog nhiều repo, module, GitHub Actions hoặc remote state.
+
+## Các giới hạn của GitHub Free
+
+| Tính năng | Giới hạn ở org Free hiện tại | Hướng mở rộng |
+| --- | --- | --- |
+| Ruleset trên repo private | Không hỗ trợ trên repo private của org Free | Demo repo public hoặc dùng GitHub Team/Enterprise phù hợp |
+| Ruleset cấp org áp dụng nhiều repo | Cần GitHub Team/Enterprise | Đưa vào thiết kế production |
+| Push ruleset hạn chế đường dẫn, phần mở rộng hoặc kích thước file | Không thuộc gói Free | Dùng gói hỗ trợ phù hợp |
+
+Nguồn chính thức: [Ruleset cấp repository và gói hỗ trợ](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets), [Ruleset cấp organization](https://docs.github.com/en/organizations/managing-organization-settings/creating-rulesets-for-repositories-in-your-organization).
+
+## Các phần chưa triển khai và roadmap
+
+Các mục sau chưa làm trong PoC; chúng không mặc nhiên bị gói Free chặn:
+
+- GitHub Actions chạy plan khi mở PR và apply theo quy trình review.
+- Remote state có locking và kiểm soát truy cập.
+- GitHub App với quyền tối thiểu cho automation.
+- Catalog nhiều repo và module áp dụng cấu hình chuẩn.
+- Drift detection định kỳ; template repository và metadata.
+- Quản lý quyền team trên repo sau khi thống nhất ownership với nhóm team/member.
+- Chính sách archive/xóa repository có kiểm soát.
+
+## Kịch bản trình bày với mentor
+
+1. Giới thiệu bài toán, phạm vi và cấu hình mong muốn.
+2. Chỉ ra resource Terraform và bằng chứng tạo repo.
+3. Demo cập nhật mô tả: plan → review → apply → kiểm tra GitHub.
+4. Demo drift với Issues: đổi UI → plan phát hiện → apply khôi phục.
+5. Show plan cuối không còn thay đổi; giải thích state và giới hạn Free.
+6. Nếu có demo ruleset, trình bày kết quả PR/review và các bước cần bổ sung để vận hành trong công ty.
