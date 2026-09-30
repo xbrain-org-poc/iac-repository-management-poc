@@ -17,9 +17,9 @@ variable "repository_description" {
 }
 
 variable "repository_visibility" {
-  description = "Repository visibility. Keep private for the default GitHub Free PoC."
+  description = "Repository visibility. Public enables the ruleset demo on GitHub Free."
   type        = string
-  default     = "private"
+  default     = "public"
 
   validation {
     condition     = contains(["private", "public"], var.repository_visibility)
@@ -30,5 +30,5 @@ variable "repository_visibility" {
 variable "enable_branch_ruleset" {
   description = "Enable default-branch ruleset. On GitHub Free, this requires a public repository."
   type        = bool
-  default     = false
+  default     = true
 }
