@@ -4,9 +4,17 @@
 
 Repo [iac-repository-management-poc](https://github.com/xbrain-org-poc/iac-repository-management-poc) chứa mã Terraform và evidence. Terraform tạo và quản lý repo public [repository-demo](https://github.com/xbrain-org-poc/repository-demo). Organization được tạo thủ công; ruleset được áp dụng ở cấp repository.
 
-## Kết quả PoC
+## PoC này sẽ làm gì?
 
-| Cần chứng minh | Đã kiểm chứng | Bằng chứng |
+1. Khai báo repo demo, các thiết lập và ruleset bảo vệ `main` bằng Terraform; chạy `plan` và `apply` để tạo trên GitHub.
+2. Sửa mô tả repo trong code và apply để chứng minh có thể cập nhật bằng IaC.
+3. Thay đổi Issues ngoài Terraform, dùng `plan` phát hiện drift rồi `apply` khôi phục.
+4. Kiểm tra rule bằng thao tác thật: thử ghi thẳng vào `main`, mở PR, quan sát merge bị chặn khi thiếu approval, sau đó để reviewer approve và squash merge.
+5. Đối chiếu GitHub với cấu hình và chạy plan cuối để xác nhận không còn thay đổi.
+
+## Kết quả thực hiện
+
+| Việc PoC | Kết quả | Bằng chứng |
 | --- | --- | --- |
 | Tạo repo và ruleset bằng IaC | Terraform apply thành công `2 added`; repo demo xuất hiện trong org | [Plan](docs/evidence/demo/02-create-plan.txt) · [Apply](docs/evidence/demo/03-create-apply.txt) |
 | Quản lý cấu hình repo | Public; Issues bật; Wiki/Projects tắt; chỉ squash merge | [GitHub API](docs/evidence/demo/15-final-settings.json) · [Ảnh merge settings](docs/evidence/demo/19-merge-settings.jpg) |
@@ -37,11 +45,22 @@ Repo [iac-repository-management-poc](https://github.com/xbrain-org-poc/iac-repos
 
 ![PR được approve, merge và xóa nhánh](docs/evidence/demo/26-approval-merge-branch-deleted.jpg)
 
-## Mã nguồn và phạm vi
+## Mã nguồn
 
 - [`main.tf`](main.tf): cấu hình repo chứa IaC và ruleset của repo này.
 - [`demo.tf`](demo.tf): repo demo và ruleset được kiểm chứng.
 - [`variables.tf`](variables.tf), [`outputs.tf`](outputs.tf): tham số và URL đầu ra.
 - [Hướng dẫn chạy/import state](docs/huong-dan-chay.md); [toàn bộ evidence](docs/evidence/demo/).
 
-State và binary plan lưu local, không commit. Chưa kiểm chứng hành vi hủy approval cũ khi push commit mới, dù rule đã được cấu hình. GitHub Free hỗ trợ ruleset cho repo public; ruleset cho repo private trong org và ruleset cấp org cần [gói phù hợp](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets). Remote state và pipeline tự động nằm ngoài phạm vi PoC.
+State và binary plan lưu local, không commit.
+
+## Giới hạn của GitHub Free và PoC
+
+| Nội dung | Giới hạn |
+| --- | --- |
+| Ruleset cấp repository | Dùng được với repo **public** như `repository-demo`; ruleset trên repo **private** của org cần gói Team trở lên. |
+| Ruleset cấp organization áp dụng cho nhiều repo | Cần gói Team/Enterprise. Với gói Free, PoC khai báo ruleset riêng cho từng repo public. |
+
+Nguồn: [GitHub Docs về repository rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets) và [organization rulesets](https://docs.github.com/en/organizations/managing-organization-settings/creating-rulesets-for-repositories-in-your-organization).
+
+Trong phạm vi PoC, chưa thử hành vi hủy approval cũ khi push commit mới dù rule đã được cấu hình. Remote state và pipeline plan/apply tự động cũng chưa triển khai; đây là giới hạn phạm vi thực hiện, không phải giới hạn của GitHub Free.
