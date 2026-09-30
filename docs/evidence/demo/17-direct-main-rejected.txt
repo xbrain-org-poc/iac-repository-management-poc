@@ -1,0 +1,7 @@
+gh: Repository rule violations found
+
+Changes must be made through a pull request.
+
+ (HTTP 409)
+{"message":"Repository rule violations found\n\nChanges must be made through a pull request.\n\n","metadata":{},"documentation_url":"https://docs.github.com/rest/repos/contents#create-or-update-file-contents","status":"409"}
+GitHub CLI exit code: 1
