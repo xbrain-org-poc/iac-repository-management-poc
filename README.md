@@ -1,10 +1,14 @@
-# PoC quản lý GitHub repository bằng Terraform
+# PoC quản lý GitHub repository bằng Terraform (lưu trữ)
+
+> **Trạng thái:** Repo này lưu mã nguồn và bằng chứng của PoC ban đầu. Sau khi tái cấu trúc, [`github-org-iac`](https://github.com/xbrain-org-poc/github-org-iac) là nơi duy nhất tiếp tục quản lý cấu hình GitHub Organization bằng Terraform. Không chạy `terraform plan`/`apply` từ repo này vì các tài nguyên đã được chuyển sang state của repo mới.
+
+Để chỉnh cấu hình hoặc demo quản lý [`repository-demo`](https://github.com/xbrain-org-poc/repository-demo), dùng [`live/xbrain-org-poc/repositories/sandbox/`](https://github.com/xbrain-org-poc/github-org-iac/tree/main/live/xbrain-org-poc/repositories/sandbox) trong repo IaC chung. Bản mã và evidence ở đây được giữ nguyên để đối chiếu kết quả PoC đã nộp.
 
 **Organization:** [xbrain-org-poc](https://github.com/xbrain-org-poc) · **Ngày kiểm chứng:** 30/09/2026 · **Gói:** GitHub Free
 
-Repo [iac-repository-management-poc](https://github.com/xbrain-org-poc/iac-repository-management-poc) chứa mã Terraform và evidence. Terraform tạo và quản lý repo public [repository-demo](https://github.com/xbrain-org-poc/repository-demo). Organization được tạo thủ công; ruleset được áp dụng ở cấp repository.
+Trong PoC ban đầu, Terraform từ repo này đã tạo và quản lý repo public [repository-demo](https://github.com/xbrain-org-poc/repository-demo). Organization được tạo thủ công; ruleset được áp dụng ở cấp repository.
 
-## PoC này sẽ làm gì?
+## Phạm vi PoC đã thực hiện
 
 1. Khai báo repo demo, các thiết lập và ruleset bảo vệ `main` bằng Terraform; chạy `plan` và `apply` để tạo trên GitHub.
 2. Sửa mô tả repo trong code và apply để chứng minh có thể cập nhật bằng IaC.
@@ -45,14 +49,14 @@ Repo [iac-repository-management-poc](https://github.com/xbrain-org-poc/iac-repos
 
 ![PR được approve, merge và xóa nhánh](docs/evidence/demo/26-approval-merge-branch-deleted.jpg)
 
-## Mã nguồn
+## Mã nguồn tại thời điểm PoC
 
 - [`main.tf`](main.tf): cấu hình repo chứa IaC và ruleset của repo này.
 - [`demo.tf`](demo.tf): repo demo và ruleset được kiểm chứng.
 - [`variables.tf`](variables.tf), [`outputs.tf`](outputs.tf): tham số và URL đầu ra.
-- [Hướng dẫn chạy/import state](docs/huong-dan-chay.md); [toàn bộ evidence](docs/evidence/demo/).
+- [Hướng dẫn chạy/import state của PoC ban đầu](docs/huong-dan-chay.md) (chỉ để tham khảo); [toàn bộ evidence](docs/evidence/demo/).
 
-State và binary plan lưu local, không commit.
+State và binary plan không được commit. Hướng dẫn vận hành hiện tại nằm trong [repo IaC chung](https://github.com/xbrain-org-poc/github-org-iac/blob/main/live/xbrain-org-poc/repositories/sandbox/README.md).
 
 ## Giới hạn của GitHub Free và PoC
 
